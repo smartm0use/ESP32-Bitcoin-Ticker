@@ -1,18 +1,18 @@
 #include <WiFi.h>
-#include <TFT_eSPI.h> 
+#include <TFT_eSPI.h>
 #include <WiFiUdp.h>
 #include <TimeLib.h>
-#include <vector> 
+#include <vector>
 #include <HTTPClient.h>
-#include <ArduinoJson.h> 
+#include <ArduinoJson.h>
 #include "orb.h"
 #include "frame.h"
 
-TFT_eSPI tft = TFT_eSPI(); 
+TFT_eSPI tft = TFT_eSPI();
 
 const int pwmFreq = 5000;
 const int pwmResolution = 8;
-const int pwmLedChannelTFT = 0;  
+const int pwmLedChannelTFT = 0;
 
 const char* ssid     = "xxxxxx";       ///EDIIIT
 const char* password = "xxxxxx"; //edit
@@ -24,7 +24,7 @@ int timeZone=1; //edit
 
 
 String payload="";
-const String endpoint ="https://api.cryptonator.com/api/ticker/btc-usd";
+const String endpoint ="https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=eur&include_last_updated_at=true&include_24hr_change=true";
 
 double current=0;
 double last=0;
@@ -51,20 +51,20 @@ int spe=0; //speed of animation/
 StaticJsonDocument<6000> doc;
 
 void setup() {
-  pinMode(35,INPUT_PULLUP);
+  // pinMode(35,INPUT_PULLUP);
   Serial.begin(9600);
   tft.init();
   tft.setRotation(1);
   tft.setSwapBytes(true);
   tft.fillScreen(TFT_BLACK);
 
-  ledcSetup(pwmLedChannelTFT, pwmFreq, pwmResolution);
-  ledcAttachPin(TFT_BL, pwmLedChannelTFT);
-  ledcWrite(pwmLedChannelTFT, brightnes[b]);
-  
+  // ledcSetup(pwmLedChannelTFT, pwmFreq, pwmResolution);
+  // ledcAttachPin(TFT_BL, pwmLedChannelTFT);
+  // ledcWrite(pwmLedChannelTFT, brightnes[b]);
+
   WiFi.begin(ssid, password);
   tft.print("connecting");
-  
+
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(400);
@@ -81,7 +81,7 @@ void loop() {
   if(millis()>currTime+refresh)
   {
   getData();
-  currTime=millis(); 
+  currTime=millis();
   }
 
   if(spe>8000){
@@ -91,7 +91,7 @@ void loop() {
   if(f==59)
   f=0;
   }
- 
+
 
   if(digitalRead(35)==0)
   {
@@ -101,10 +101,10 @@ void loop() {
     b++;
     if(b==6)
     b=0;
-    ledcWrite(pwmLedChannelTFT, brightnes[b]); 
+    ledcWrite(pwmLedChannelTFT, brightnes[b]);
     }
     }else deb=0;
-  
+
   spe++;
 }
 
@@ -115,7 +115,7 @@ void getData()
     tft.fillRect(46,32,56,28,dblue);
 
     //tft.fillRect(118,22,120,100,dblue);
-    
+
     for(int i=0;i<13;i++)
     tft.drawLine(118+(i*10),22,118+(i*10),122,gray);
     for(int i=0;i<10;i++)
@@ -132,9 +132,9 @@ void getData()
    payload.toCharArray(inp,payload.length());
    deserializeJson(doc,inp);
 
-   String v=doc["ticker"]["price"];
-   String c=doc["ticker"]["change"];
-   String t=doc["timestamp"];
+   String v=doc["bitcoin"]["eur"];
+   double c=doc["bitcoin"]["eur_24h_change"];
+   String t=doc["bitcoin"]["last_updated_at"];
    Serial.print(t);
    unsigned long t1=t.toInt()+(timeZone*3600);
    //day(t), month(t), year(t), hour(t), minute(t), second(t)
@@ -143,7 +143,7 @@ void getData()
    tft.drawString("updated:",50,37);
    tft.drawString(String(hour(t1))+":"+String(minute(t1)),50,47);
    tft.setTextColor(TFT_WHITE,TFT_BLACK);
-   
+
    current=v.toDouble();
    tft.drawString("PRICE (usd):",4,fromtop+4,2);
    tft.drawString("CHANGE:",4,fromtop+32+8,2);
@@ -151,10 +151,10 @@ void getData()
     tft.setTextColor(green,TFT_BLACK);
    tft.drawString(String(current),4,fromtop+20);
    tft.setTextColor(TFT_ORANGE,TFT_BLACK);
-   tft.drawString("bitCoin",4,0);
+   tft.drawString("Bitcoin",4,0);
     tft.setTextColor(green,TFT_BLACK);
-   
-   tft.drawString(String(current-last),4,fromtop+46+10,2);
+
+   tft.drawString(String(c),4,fromtop+46+10,2);
    tft.setTextColor(0x0B52,TFT_BLACK);
    tft.setTextFont(1);
    tft.drawString("LAST 12 READINGS",118,6);
@@ -176,23 +176,23 @@ tft.setTextColor(TFT_ORANGE,TFT_BLACK);
 
      minimal=readings[0];
      maximal=readings[0];
-     
+
    for(int i=0;i<n;i++){
-   
+
    if(readings[i]<minimal)
-   minimal=readings[i]; 
+   minimal=readings[i];
    if(readings[i]>maximal)
-   maximal=readings[i]; 
+   maximal=readings[i];
 
    int mx=maximal/2;
    int mi=minimal/2;
    int re=readings[i]/2;
    //tft.drawString(String(i)+"."+String(readings[i]),120,i*10);
-   
+
    }
    int mx=maximal/2;
    int mi=minimal/2;
-  
+
    for(int i=0;i<n;i++)
    {
    int re=readings[i]/2;
